@@ -1,14 +1,14 @@
+package jetbrains.frames;
+
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 public class TableSizeFrame extends JFrame {
-    private JLabel sizeLabel;
-    private JLabel xLabel;
-    private JTextField rowsTextField;
-    private JTextField columnsTextField;
-    private JButton createTableButton;
+    private final JLabel sizeLabel;
+    private final JLabel xLabel;
+    private final JTextField rowsTextField;
+    private final JTextField columnsTextField;
+    private final JButton createTableButton;
 
     public TableSizeFrame() {
 

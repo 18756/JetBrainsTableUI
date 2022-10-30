@@ -1,0 +1,65 @@
+FORMULA -> NUMBER
+FORMULA -> =EXP
+
+EXP -> T EXP'
+EXP -> -T EXP'
+EXP' -> +T EXP'
+EXP' -> -T EXP'
+EXP' -> EPS
+
+T -> F T'
+T' -> *F T'
+T' -> /F T'
+T' -> EPS
+
+F -> (EXP)
+F -> NUMBER
+F -> TABLE_CELL
+
+F -> FUNCTION_NAME(PARAMS)
+PARAMS -> PARAM PARAMS'
+PARAMS -> EPS
+PARAMS' -> ,PARAM PARAMS'
+PARAMS' -> EPS
+
+PARAM -> TABLE_DIAPASON
+PARAM -> EXP
+
+
+RECALCULATE!!!!!!!!!!!!!!!!!!!!!!!!!
+---------------------------------------------------------------
+                         FIRST                                                               FOLLOW
+FORMULA: NUMBER =                                                 | $
+EXP    : - ( NUMBER TABLE_CELL FUNCTION_NAME                      | $ ) ,
+EXP'   : + - EPS                                                  | $ ) ,
+T      : ( NUMBER TABLE_CELL FUNCTION_NAME                        | $ + - ) ,
+T'     : * / EPS                                                  | $ + - ) ,
+F      : ( NUMBER TABLE_CELL FUNCTION_NAME                        | * / $ + - ) ,
+PARAMS : EPS TABLE_DIAPASON - ( NUMBER TABLE_CELL FUNCTION_NAME   | )
+PARAMS': , EPS                                                    | )
+PARAM  : TABLE_DIAPASON - ( NUMBER TABLE_CELL FUNCTION_NAME       | , )
+--------------------------------------------------------------------------
+for all A->alpha, A->beta:
+1) FIRST(alpha) intersection FIRST(beta) = {}
+2) EPS in FIRST(alpha) => FOLLOW(A) intersection FIRST(beta) = {}
+so grammar is LL(1) # we can read only one next symbol to parse any formula.
+
+---------------------------------------------------------------
+Terminals:
+=
++
+-
+*
+/
+(
+)
+,
+NUMBER (double) : \d+[.\d*]?
+FUNCTION_NAME (String) : [A-Z]+
+TABLE_CELL (int, int) : [A-Z]+\d+
+TABLE_DIAPASON (int, int, int, int) : [A-Z]+\d+:[A-Z]+\d+
+
+examples: "=pow(2,A1)+42"
+
+
+maybe add boolean, strings.

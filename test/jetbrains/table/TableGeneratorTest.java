@@ -1,3 +1,5 @@
+package jetbrains.table;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -8,7 +10,7 @@ import java.util.List;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-class ExcelTableTest {
+class TableGeneratorTest {
     private static final int ALPHABET_SIZE = 26;
     private JTable table;
 
@@ -26,7 +28,7 @@ class ExcelTableTest {
     @ParameterizedTest
     @MethodSource("tableSizeSource")
     public void sizeTest(int rows, int columns) {
-        table = ExcelTable.getExcelTable(rows, columns);
+        table = TableGenerator.getExcelTable(rows, columns);
         Assertions.assertEquals(rows, table.getRowCount());
         Assertions.assertEquals(columns + 1, table.getColumnCount());
     }
@@ -44,34 +46,38 @@ class ExcelTableTest {
     @ParameterizedTest
     @MethodSource("rowHeaderSource")
     public void rowHeaderTest(int rows, int columns, List<String> expectedRowHeader) {
-        table = ExcelTable.getExcelTable(rows, columns);
+        table = TableGenerator.getExcelTable(rows, columns);
         List<Object> actualRowHeader = IntStream.range(0, rows).mapToObj(row -> table.getValueAt(row, 0)).toList();
         Assertions.assertEquals(expectedRowHeader, actualRowHeader);
     }
 
     private static Stream<Arguments> columnHeaderSource() {
         return Stream.of(
-                Arguments.of(1, 1, 0, "A"),
-                Arguments.of(1, 2, 0, "A"),
-                Arguments.of(1, 2, 1, "B"),
-                Arguments.of(2, 2, 1, "B"),
-                Arguments.of(1, 3, 2, "C"),
-                Arguments.of(1, 30, 25, "Z"),
-                Arguments.of(1, 30, ALPHABET_SIZE, "AA"),
-                Arguments.of(1, 30, 27, "AB"),
-                Arguments.of(1, 100, 2 * ALPHABET_SIZE, "BA"),
-                Arguments.of(1, 100, 2 * ALPHABET_SIZE + 1, "BB"),
-                Arguments.of(1, 100, 3 * ALPHABET_SIZE, "CA"),
-                Arguments.of(1, 1000, ALPHABET_SIZE * ALPHABET_SIZE, "ZA"),
-                Arguments.of(1, 1000, (ALPHABET_SIZE + 1) * ALPHABET_SIZE, "AAA"),
-                Arguments.of(1, 1000, (ALPHABET_SIZE + 1) * ALPHABET_SIZE + 1, "AAB")
+                Arguments.of(0, "A"),
+                Arguments.of(1, "B"),
+                Arguments.of(2, "C"),
+                Arguments.of(ALPHABET_SIZE - 1, "Z"),
+                Arguments.of(ALPHABET_SIZE, "AA"),
+                Arguments.of(ALPHABET_SIZE + 1, "AB"),
+                Arguments.of(2 * ALPHABET_SIZE, "BA"),
+                Arguments.of(2 * ALPHABET_SIZE + 1, "BB"),
+                Arguments.of(3 * ALPHABET_SIZE, "CA"),
+                Arguments.of(ALPHABET_SIZE * ALPHABET_SIZE, "ZA"),
+                Arguments.of((ALPHABET_SIZE + 1) * ALPHABET_SIZE, "AAA"),
+                Arguments.of((ALPHABET_SIZE + 1) * ALPHABET_SIZE + 1, "AAB")
         );
     }
 
     @ParameterizedTest
     @MethodSource("columnHeaderSource")
-    public void columnHeaderTest(int rows, int columns, int columnIdToCheck, String expectedColumnName) {
-        table = ExcelTable.getExcelTable(rows, columns);
-        Assertions.assertEquals(expectedColumnName, table.getColumnName(columnIdToCheck + 1));
+    public void getColumnNameByIdTest(int columnId, String expectedColumnName) {
+        Assertions.assertEquals(expectedColumnName, TableGenerator.getColumnNameById(columnId));
+    }
+
+
+    @ParameterizedTest
+    @MethodSource("columnHeaderSource")
+    public void getColumnIdByNameTest(int expectedColumnId, String columnName) {
+        Assertions.assertEquals(expectedColumnId, TableGenerator.getColumnIdByName(columnName));
     }
 }

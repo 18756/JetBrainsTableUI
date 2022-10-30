@@ -1,12 +1,15 @@
+package jetbrains.frames;
+
 import javax.swing.*;
 import java.awt.*;
+import jetbrains.table.TableGenerator;
 
 public class TableFrame extends JFrame {
     public TableFrame(int rows, int columns) {
 
         setTitle("Table");
 
-        JTable table = ExcelTable.getExcelTable(rows, columns);
+        JTable table = TableGenerator.getExcelTable(rows, columns);
 
         Container c = getContentPane();
         FlowLayout fl = new FlowLayout(FlowLayout.LEFT);
@@ -14,8 +17,8 @@ public class TableFrame extends JFrame {
 
         JScrollPane scrollPane = new JScrollPane(table);
 
+        getContentPane().setLayout(new BorderLayout());
         c.add(scrollPane);
-//        c.add(table);
 
         setSize(800, 500);
         setVisible(true);

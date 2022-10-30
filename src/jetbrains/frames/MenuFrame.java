@@ -1,11 +1,11 @@
+package jetbrains.frames;
+
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 public class MenuFrame extends JFrame {
-    private JButton fileTableButton;
-    private JButton newTableButton;
+    private final JButton fileTableButton;
+    private final JButton newTableButton;
 
     public MenuFrame() {
 
