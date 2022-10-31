@@ -11,21 +11,13 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.lang.reflect.Executable;
 import java.util.List;
 import java.util.stream.Stream;
 
 
 class LexicalAnalyzerTest {
-
-    @BeforeEach
-    void setUp() {
-    }
-
-    @AfterEach
-    void tearDown() {
-    }
-
-    private static Stream<Arguments> correctFormulasSource() {
+    private static Stream<Arguments> validTokensSource() {
         return Stream.of(
                 Arguments.of("", List.of()),
                 Arguments.of("=", List.of(new Token(TokenType.EQ, null))),
@@ -65,6 +57,7 @@ class LexicalAnalyzerTest {
                 Arguments.of("f", List.of(new Token(TokenType.FUNCTION_NAME, "f"))),
                 Arguments.of("sin", List.of(new Token(TokenType.FUNCTION_NAME, "sin"))),
                 Arguments.of("log2", List.of(new Token(TokenType.FUNCTION_NAME, "log2"))),
+                Arguments.of("matrix_prod", List.of(new Token(TokenType.FUNCTION_NAME, "matrix_prod"))),
 
                 Arguments.of("1 + B2", List.of(
                         new Token(TokenType.NUMBER, 1.0),
@@ -98,11 +91,33 @@ class LexicalAnalyzerTest {
     }
 
     @ParameterizedTest
-    @MethodSource("correctFormulasSource")
-    public void getTokensFromTextTest(String text, List<LexicalAnalyzer.Token> expectedTokens) throws ParserException {
+    @MethodSource("validTokensSource")
+    public void getTokensFromValidTextTest(String text, List<LexicalAnalyzer.Token> expectedTokens) throws ParserException {
         text = "\n \t" + text + "\n\t ";
         List<LexicalAnalyzer.Token> actualTokens = LexicalAnalyzer.getTokensFromText(text);
         Assertions.assertEquals(expectedTokens, actualTokens);
     }
 
+    private static Stream<Arguments> invalidTokensSource() {
+        return Stream.of(
+                Arguments.of("~"),
+                Arguments.of("^"),
+                Arguments.of("!"),
+                Arguments.of("["),
+                Arguments.of("]"),
+                Arguments.of(".5"),
+                Arguments.of("F"),
+                Arguments.of("_fun"),
+                Arguments.of("A3:a4"),
+                Arguments.of("A3:A"),
+                Arguments.of("a3:A4"),
+                Arguments.of("4+3 &")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidTokensSource")
+    public void getTokensFromInvalidTextTest(String text) throws ParserException {
+        Assertions.assertThrows(ParserException.class, () -> LexicalAnalyzer.getTokensFromText(text));
+    }
 }

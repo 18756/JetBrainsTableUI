@@ -10,10 +10,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class LexicalAnalyzer {
-    private static final String SKIP_SYMBOLS = "\\s+";
-
+    private static final String SKIP_SYMBOLS = "\\s*";
     public static List<Token> getTokensFromText(String text) throws ParserException {
-        text = text.replaceAll(SKIP_SYMBOLS,"");
+//        text = text.replaceAll(SKIP_SYMBOLS,"");
+        text = text.trim();
         List<Token> tokens = new ArrayList<>();
         int curId = 0;
         boolean isProgress;
@@ -84,7 +84,7 @@ public class LexicalAnalyzer {
                 return getCellPositionFromHeaderNames(matcher.group(2), matcher.group(1));
             }
         },
-        FUNCTION_NAME("[a-z][a-z0-9]*") {
+        FUNCTION_NAME("[a-z][a-z0-9_]*") {
             @Override
             public Object getData(Matcher matcher) {
 //                check if function name exist
@@ -95,7 +95,7 @@ public class LexicalAnalyzer {
         final String regularExpression;
 
         TokenType(String regularExpression) {
-            this.regularExpression = regularExpression;
+            this.regularExpression = SKIP_SYMBOLS + regularExpression;
         }
 
         public Object getData(Matcher matcher) {

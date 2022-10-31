@@ -1,13 +1,18 @@
 package jetbrains.table;
 
+import jetbrains.parser.FormulaParser;
+import jetbrains.parser.ParserException;
+
 import javax.swing.*;
 import javax.swing.event.CellEditorListener;
 import javax.swing.event.ChangeEvent;
 import java.awt.event.MouseEvent;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.EventObject;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.BiFunction;
 
 public class ExcelTable extends JTable {
 //    my TableModel
@@ -32,7 +37,8 @@ public class ExcelTable extends JTable {
                 int column = lastEditCellPosition.column;
                 String newText = (String) getValueAt(row, column);
                 tableCells[row][column - 1].updateText(newText);
-                setValueAt("2", row, column);
+                String textToShow = tableCells[row][column - 1].getTextToShow();
+                setValueAt(textToShow, row, column);
             }
 
             @Override
@@ -50,17 +56,18 @@ public class ExcelTable extends JTable {
     public boolean editCellAt(int row, int column, EventObject eventObject) {
         if (isCellEditable(row, column) && eventObject instanceof MouseEvent && ((MouseEvent) eventObject).getClickCount() == 2) {
             System.out.println("START EDITING " + row + " " + column);
-            setValueAt("1", row, column);
+            setValueAt(tableCells[row][column - 1].text, row, column);
             lastEditCellPosition = new CellPosition(row, column);
         }
         return super.editCellAt(row, column, eventObject);
     }
 
-    private static class CellElement {
+    private class CellElement {
         String text;
 //        change to formula class param
+        FormulaParser.TreeNode treeNode;
         Double formulaValue;
-        CellType cellType;
+        String errorMessage;
 
         public CellElement(String text) {
             updateText(text);
@@ -68,24 +75,40 @@ public class ExcelTable extends JTable {
 
         public void updateText(String text) {
             this.text = text;
+            formulaValue = null;
+            errorMessage = null;
+            try {
+                treeNode = FormulaParser.parse(text);
+                recalculateFormulaValue();
+            } catch (ParserException e) {
+                errorMessage = e.getMessage();
+            }
 //            parse text and setUp formulaValue and cellType
 //            add edges to graph
         }
 
         public void recalculateFormulaValue() {
-
+            BiFunction<Integer, Integer, Double> tableValuesFunction = (row, column) -> tableCells[row][column - 1].getValue();
+            formulaValue = (Double) treeNode.calculate(tableValuesFunction);
         }
 
-        public static enum CellType {
-            NOT_FORMULA,
-            VALID_FORMULA,
-            INVALID_FORMULA
+        public double getValue() {
+            return formulaValue == null ? 0.0 : formulaValue;
+        }
+
+        public String getTextToShow() {
+            if (errorMessage != null) {
+                return errorMessage;
+            } else if (formulaValue != null) {
+                return formulaValue + "";
+            }
+            return text;
         }
     }
 
     public static class CellPosition {
-        int row;
-        int column;
+        public int row;
+        public int column;
 
         public CellPosition(int row, int column) {
             this.row = row;
@@ -102,12 +125,17 @@ public class ExcelTable extends JTable {
     }
 
     public static class CellDiapason {
-        CellPosition fromCellPosition;
-        CellPosition toCellPosition;
+        public CellPosition fromCellPosition;
+        public CellPosition toCellPosition;
 
         public CellDiapason(CellPosition fromCellPosition, CellPosition toCellPosition) {
-            this.fromCellPosition = fromCellPosition;
-            this.toCellPosition = toCellPosition;
+            int minRow = Math.min(fromCellPosition.row, toCellPosition.row);
+            int maxRow = Math.max(fromCellPosition.row, toCellPosition.row);
+            int minColumn = Math.min(fromCellPosition.column, toCellPosition.column);
+            int maxColumn = Math.max(fromCellPosition.column, toCellPosition.column);
+
+            this.fromCellPosition = new CellPosition(minRow, minColumn);
+            this.toCellPosition = new CellPosition(maxRow, maxColumn);
         }
 
         @Override

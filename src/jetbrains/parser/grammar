@@ -1,8 +1,10 @@
 FORMULA -> NUMBER
+FORMULA -> -NUMBER
 FORMULA -> =EXP
 
 EXP -> T EXP'
 EXP -> -T EXP'
+EXP -> +T EXP'
 EXP' -> +T EXP'
 EXP' -> -T EXP'
 EXP' -> EPS
@@ -14,7 +16,7 @@ T' -> EPS
 
 F -> (EXP)
 F -> NUMBER
-F -> TABLE_CELL
+F -> CELL_POSITION
 
 F -> FUNCTION_NAME(PARAMS)
 PARAMS -> PARAM PARAMS'
@@ -22,22 +24,22 @@ PARAMS -> EPS
 PARAMS' -> ,PARAM PARAMS'
 PARAMS' -> EPS
 
-PARAM -> TABLE_DIAPASON
+PARAM -> CELL_DIAPASON
 PARAM -> EXP
 
 
 RECALCULATE!!!!!!!!!!!!!!!!!!!!!!!!!
 ---------------------------------------------------------------
                          FIRST                                                               FOLLOW
-FORMULA: NUMBER =                                                 | $
-EXP    : - ( NUMBER TABLE_CELL FUNCTION_NAME                      | $ ) ,
-EXP'   : + - EPS                                                  | $ ) ,
-T      : ( NUMBER TABLE_CELL FUNCTION_NAME                        | $ + - ) ,
-T'     : * / EPS                                                  | $ + - ) ,
-F      : ( NUMBER TABLE_CELL FUNCTION_NAME                        | * / $ + - ) ,
-PARAMS : EPS TABLE_DIAPASON - ( NUMBER TABLE_CELL FUNCTION_NAME   | )
-PARAMS': , EPS                                                    | )
-PARAM  : TABLE_DIAPASON - ( NUMBER TABLE_CELL FUNCTION_NAME       | , )
+FORMULA: NUMBER =                                                    | $
+EXP    : - ( NUMBER CELL_POSITION FUNCTION_NAME                      | $ ) ,
+EXP'   : + - EPS                                                     | $ ) ,
+T      : ( NUMBER CELL_POSITION FUNCTION_NAME                        | $ + - ) ,
+T'     : * / EPS                                                     | $ + - ) ,
+F      : ( NUMBER CELL_POSITION FUNCTION_NAME                        | * / $ + - ) ,
+PARAMS : EPS CELL_DIAPASON - ( NUMBER CELL_POSITION FUNCTION_NAME    | )
+PARAMS': , EPS                                                       | )
+PARAM  : CELL_DIAPASON - ( NUMBER CELL_POSITION FUNCTION_NAME        | , )
 --------------------------------------------------------------------------
 for all A->alpha, A->beta:
 1) FIRST(alpha) intersection FIRST(beta) = {}
@@ -55,7 +57,7 @@ Terminals:
 )
 ,
 NUMBER (double) : \d+[.\d*]?
-FUNCTION_NAME (String) : [A-Z]+
+FUNCTION_NAME (String) : [a-z_]+
 TABLE_CELL (int, int) : [A-Z]+\d+
 TABLE_DIAPASON (int, int, int, int) : [A-Z]+\d+:[A-Z]+\d+
 
