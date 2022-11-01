@@ -1,5 +1,7 @@
 package jetbrains.parser;
 
+import jetbrains.exceptions.FunctionParameterException;
+import jetbrains.exceptions.ParserException;
 import jetbrains.parser.LexicalAnalyzer.Token;
 import jetbrains.table.ExcelTable;
 
@@ -10,6 +12,8 @@ import java.util.function.Function;
 import static jetbrains.parser.LexicalAnalyzer.TokenType.*;
 
 public class FormulaParser {
+//    TODO: add $to cells to copy formulas
+//    TODO: separate this big file to small files
     public static TreeNode parse(String text) throws ParserException {
         List<Token> tokenList = LexicalAnalyzer.getTokensFromText(text);
         Collections.reverse(tokenList);
@@ -179,8 +183,14 @@ public class FormulaParser {
             this.calculator = calculator;
         }
 
-        public Object calculate(BiFunction<Integer, Integer, Double> tableValuesFunction) {
+        public Object calculate(BiFunction<Integer, Integer, Double> tableValuesFunction) throws FunctionParameterException {
             return calculator.calculate(this, tableValuesFunction);
+        }
+
+        public void addAllCellPositions(Set<ExcelTable.CellPosition> cellPositions) {
+            for (TreeNode child : children) {
+                child.addAllCellPositions(cellPositions);
+            }
         }
 
         @Override
@@ -204,6 +214,22 @@ public class FormulaParser {
             this.token = token;
         }
 
+        public void addAllCellPositions(Set<ExcelTable.CellPosition> cellPositions) {
+            if (token.tokenType == CELL_POSITION) {
+                cellPositions.add((ExcelTable.CellPosition) token.data);
+            } else if (token.tokenType == CELL_DIAPASON) {
+                ExcelTable.CellDiapason cellDiapason = (ExcelTable.CellDiapason) token.data;
+                ExcelTable.CellPosition fromCellPosition = cellDiapason.fromCellPosition;
+                ExcelTable.CellPosition toCellPosition = cellDiapason.toCellPosition;
+                for (int row = fromCellPosition.row; row <= toCellPosition.row; row++) {
+                    for (int column = fromCellPosition.column; column <= toCellPosition.column; column++) {
+                        cellPositions.add(new ExcelTable.CellPosition(row, column));
+                    }
+                }
+            }
+        }
+
+
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -213,10 +239,10 @@ public class FormulaParser {
         }
     }
 
-    public static enum Calculator {
+    public enum Calculator {
         SUM {
             @Override
-            public Object calculate(TreeNode treeNode, BiFunction<Integer, Integer, Double> tableValuesFunction) {
+            public Object calculate(TreeNode treeNode, BiFunction<Integer, Integer, Double> tableValuesFunction) throws FunctionParameterException {
                 double sum = 0;
                 int k = 1;
                 for (TreeNode child : treeNode.children) {
@@ -233,7 +259,7 @@ public class FormulaParser {
         },
         PRODUCT {
             @Override
-            public Object calculate(TreeNode treeNode, BiFunction<Integer, Integer, Double> tableValuesFunction) {
+            public Object calculate(TreeNode treeNode, BiFunction<Integer, Integer, Double> tableValuesFunction) throws FunctionParameterException {
                 double product = 1;
                 boolean isMul = true;
                 for (TreeNode child : treeNode.children) {
@@ -255,27 +281,191 @@ public class FormulaParser {
         },
         FUNCTION {
             //            TODO: add params size and type checking
-            private final Map<String, Function<List<Object>, Double>> FUNCTION_NAME_TO_FUNCTION = Map.of(
-                    "sin", this::sin
+            private final Map<String, FunctionWithParameterLimits> FUNCTION_NAME_TO_FUNCTION = Map.of(
+                    "sin", new FunctionWithParameterLimits(this::sin, List.of(ParamLimit.ONLY_DOUBLE, ParamLimit.END_PARAMS)),
+                    "cos", new FunctionWithParameterLimits(this::cos, List.of(ParamLimit.ONLY_DOUBLE, ParamLimit.END_PARAMS)),
+                    "tan", new FunctionWithParameterLimits(this::tan, List.of(ParamLimit.ONLY_DOUBLE, ParamLimit.END_PARAMS)),
+                    "ln", new FunctionWithParameterLimits(this::ln, List.of(ParamLimit.ONLY_DOUBLE, ParamLimit.END_PARAMS)),
+                    "exp", new FunctionWithParameterLimits(this::exp, List.of(ParamLimit.ONLY_DOUBLE, ParamLimit.END_PARAMS)),
+                    "abs", new FunctionWithParameterLimits(this::abs, List.of(ParamLimit.ONLY_DOUBLE, ParamLimit.END_PARAMS)),
+                    "pow", new FunctionWithParameterLimits(this::pow, List.of(ParamLimit.ONLY_DOUBLE, ParamLimit.ONLY_DOUBLE, ParamLimit.END_PARAMS)),
+                    "min", new FunctionWithParameterLimits(this::min, List.of(ParamLimit.ANY)),
+                    "max", new FunctionWithParameterLimits(this::max, List.of(ParamLimit.ANY)),
+                    "sum", new FunctionWithParameterLimits(this::sum, List.of(ParamLimit.ANY))
             );
 
             private double sin(List<Object> params) {
-                double param = (double) params.get(0);
-                return Math.sin(param);
+                return Math.sin((double) params.get(0));
             }
 
-            //            TODO: add more functions
+            private double cos(List<Object> params) {
+                return Math.cos((double) params.get(0));
+            }
+
+            private double tan(List<Object> params) {
+                return Math.tan((double) params.get(0));
+            }
+
+            private double ln(List<Object> params) {
+                return Math.log((double) params.get(0));
+            }
+
+            private double exp(List<Object> params) {
+                return Math.exp((double) params.get(0));
+            }
+
+            private double abs(List<Object> params) {
+                return Math.abs((double) params.get(0));
+            }
+
+            private double pow(List<Object> params) {
+                return Math.pow((double) params.get(0), (double) params.get(1));
+            }
+
+            private double min(List<Object> params) {
+                double res = Double.MAX_VALUE;
+                for (Object param : params) {
+                    if (param instanceof Double) {
+                        res = Math.min(res, (Double) param);
+                    } else {
+                        double[][] matrix = (double[][]) param;
+                        double matrixMin = Arrays.stream(matrix)
+                                .map(row -> Arrays.stream(row).min().orElse(Double.MAX_VALUE))
+                                .min(Double::compareTo).orElse(Double.MAX_VALUE);
+                        res = Math.min(res, matrixMin);
+                    }
+                }
+                return res;
+            }
+
+            private double max(List<Object> params) {
+                double res = -Double.MAX_VALUE;
+                for (Object param : params) {
+                    if (param instanceof Double) {
+                        res = Math.max(res, (Double) param);
+                    } else {
+                        double[][] matrix = (double[][]) param;
+                        double matrixMin = Arrays.stream(matrix)
+                                .map(row -> Arrays.stream(row).max().orElse(-Double.MIN_VALUE))
+                                .max(Double::compareTo).orElse(-Double.MIN_VALUE);
+                        res = Math.max(res, matrixMin);
+                    }
+                }
+                return res;
+            }
+
+            private double sum(List<Object> params) {
+                double res = 0;
+                for (Object param : params) {
+                    if (param instanceof Double) {
+                        res += (double) param;
+                    } else {
+                        double[][] matrix = (double[][]) param;
+                        double matrixSum = Arrays.stream(matrix).flatMapToDouble(Arrays::stream).sum();
+                        res += matrixSum;
+                    }
+                }
+                return res;
+            }
+
+
+            //            TODO: add more matrix functions
             @Override
-            public Object calculate(TreeNode treeNode, BiFunction<Integer, Integer, Double> tableValuesFunction) {
+            public Object calculate(TreeNode treeNode, BiFunction<Integer, Integer, Double> tableValuesFunction) throws FunctionParameterException {
                 String functionName = (String) ((TerminalNode) treeNode.children.get(0)).token.data;
                 TreeNode paramsNode = treeNode.children.get(1);
                 List<Object> paramValues = new ArrayList<>();
                 for (TreeNode paramNode : paramsNode.children) {
-                    double paramValue = (double) paramNode.calculate(tableValuesFunction);
+                    Object paramValue = paramNode.calculate(tableValuesFunction);
                     paramValues.add(paramValue);
                 }
-                Function<List<Object>, Double> function = FUNCTION_NAME_TO_FUNCTION.get(functionName);
-                return function.apply(paramValues);
+                FunctionWithParameterLimits functionWithParameterLimits = FUNCTION_NAME_TO_FUNCTION.get(functionName);
+                functionWithParameterLimits.checkParams(paramValues);
+                return functionWithParameterLimits.function.apply(paramValues);
+            }
+
+            static class FunctionWithParameterLimits {
+                Function<List<Object>, Double> function;
+                List<ParamLimit> paramLimits;
+
+                public FunctionWithParameterLimits(Function<List<Object>, Double> function, List<ParamLimit> paramLimits) {
+                    this.function = function;
+                    this.paramLimits = paramLimits;
+                }
+
+                public void checkParams(List<Object> paramValues) throws FunctionParameterException {
+                    int paramId = 0;
+                    for (ParamLimit paramLimit : paramLimits) {
+                        paramId += paramLimit.checkParams(paramValues, paramId);
+                    }
+                }
+            }
+
+            enum ParamLimit {
+                ONLY_DOUBLE {
+                    @Override
+                    public int checkParams(List<Object> paramValues, int paramId) throws FunctionParameterException {
+                        checkNotEmptyParams(paramValues, paramId);
+                        if (!(paramValues.get(paramId) instanceof Double)) {
+                            throw new FunctionParameterException("Expected double param, but " +
+                                    paramValues.get(paramId).getClass().getName().toLowerCase() + " was found");
+                        }
+                        return 1;
+                    }
+                },
+                ONLY_CELL_DIAPASON {
+                    @Override
+                    public int checkParams(List<Object> paramValues, int paramId) throws FunctionParameterException {
+                        checkNotEmptyParams(paramValues, paramId);
+                        if (!(paramValues.get(paramId) instanceof Double[][])) {
+                            throw new FunctionParameterException("Expected cell diapason param, but " +
+                                    paramValues.get(paramId).getClass().getName().toLowerCase() + " was found");
+                        }
+                        return 1;
+                    }
+                },
+                ANY {
+                    @Override
+                    public int checkParams(List<Object> paramValues, int paramId) throws FunctionParameterException {
+                        checkNotEmptyParams(paramValues, paramId);
+                        return 1;
+                    }
+                },
+                CONTINUE_DOUBLES {
+                    @Override
+                    public int checkParams(List<Object> paramValues, int paramId) throws FunctionParameterException {
+                        for (int i = paramId; i < paramValues.size(); i++) {
+                            ONLY_DOUBLE.checkParams(paramValues, i);
+                        }
+                        return paramValues.size() - paramId;
+                    }
+                },
+                CONTINUE_CELL_DIAPASONS {
+                    @Override
+                    public int checkParams(List<Object> paramValues, int paramId) throws FunctionParameterException {
+                        for (int i = paramId; i < paramValues.size(); i++) {
+                            ONLY_CELL_DIAPASON.checkParams(paramValues, i);
+                        }
+                        return paramValues.size() - paramId;
+                    }
+                },
+                END_PARAMS {
+                    @Override
+                    public int checkParams(List<Object> paramValues, int paramId) throws FunctionParameterException {
+                        if (paramId < paramValues.size()) {
+                            throw new FunctionParameterException("Extra parameters were found");
+                        }
+                        return 0;
+                    }
+                };
+
+                private static void checkNotEmptyParams(List<Object> paramValues, int paramId) throws FunctionParameterException {
+                    if (paramId == paramValues.size()) {
+                        throw new FunctionParameterException("Not enough parameters");
+                    }
+                }
+
+                abstract public int checkParams(List<Object> paramValues, int paramId) throws FunctionParameterException;
             }
         },
         NUMBER {
@@ -315,7 +505,7 @@ public class FormulaParser {
             }
         };
 
-        abstract public Object calculate(TreeNode treeNode, BiFunction<Integer, Integer, Double> tableValuesFunction);
+        abstract public Object calculate(TreeNode treeNode, BiFunction<Integer, Integer, Double> tableValuesFunction) throws FunctionParameterException;
     }
 }
 

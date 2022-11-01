@@ -10,8 +10,6 @@ public class TableGenerator {
         String[] columnHeader = getColumnHeader(columns);
         String[][] tableData = getTableData(rows, columns);
         JTable table = new ExcelTable(tableData, columnHeader);
-//        resizeColumnWidth(table);
-//        table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
         table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         return table;
     }
@@ -40,7 +38,6 @@ public class TableGenerator {
         while (columnId >= 0) {
             columnName.append(ALPHABET[columnId % ALPHABET.length]);
             columnId /= ALPHABET.length;
-//            to start with 'A', not 'B'
             columnId--;
         }
         return columnName.reverse().toString();

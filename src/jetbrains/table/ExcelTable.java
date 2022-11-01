@@ -1,31 +1,31 @@
 package jetbrains.table;
 
+import jetbrains.exceptions.FunctionParameterException;
+import jetbrains.graph.FormulaDependencyGraph;
+import jetbrains.exceptions.FormulaCalculatorException;
 import jetbrains.parser.FormulaParser;
-import jetbrains.parser.ParserException;
+import jetbrains.exceptions.ParserException;
 
 import javax.swing.*;
 import javax.swing.event.CellEditorListener;
 import javax.swing.event.ChangeEvent;
 import java.awt.event.MouseEvent;
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.EventObject;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.BiFunction;
 
 public class ExcelTable extends JTable {
-//    my TableModel
-    CellElement[][] tableCells;
-    CellPosition lastEditCellPosition;
-    List<Object> dependencyLinks = new ArrayList<>();
+    //    my TableModel
+    private final CellElement[][] tableCells;
+    private final FormulaDependencyGraph formulaDependencyGraph = new FormulaDependencyGraph();
+
+    private CellPosition lastEditCellPosition;
 
     public ExcelTable(String[][] tableData, String[] columnHeader) {
         super(tableData, columnHeader);
         tableCells = new CellElement[getRowCount()][getColumnCount()];
         for (int i = 0; i < tableData.length; i++) {
             for (int j = 1; j < tableData[i].length; j++) {
-                tableCells[i][j - 1] = new CellElement(tableData[i][j]);
+                tableCells[i][j - 1] = new CellElement(new CellPosition(i, j), tableData[i][j]);
             }
         }
 
@@ -37,8 +37,6 @@ public class ExcelTable extends JTable {
                 int column = lastEditCellPosition.column;
                 String newText = (String) getValueAt(row, column);
                 tableCells[row][column - 1].updateText(newText);
-                String textToShow = tableCells[row][column - 1].getTextToShow();
-                setValueAt(textToShow, row, column);
             }
 
             @Override
@@ -63,13 +61,14 @@ public class ExcelTable extends JTable {
     }
 
     private class CellElement {
+        CellPosition cellPosition;
         String text;
-//        change to formula class param
         FormulaParser.TreeNode treeNode;
         Double formulaValue;
         String errorMessage;
 
-        public CellElement(String text) {
+        public CellElement(CellPosition cellPosition, String text) {
+            this.cellPosition = cellPosition;
             updateText(text);
         }
 
@@ -77,19 +76,41 @@ public class ExcelTable extends JTable {
             this.text = text;
             formulaValue = null;
             errorMessage = null;
+            formulaDependencyGraph.removeIncomingEdges(cellPosition);
             try {
                 treeNode = FormulaParser.parse(text);
-                recalculateFormulaValue();
+                Set<CellPosition> cellPositionsInFormula = new HashSet<>();
+                treeNode.addAllCellPositions(cellPositionsInFormula);
+                cellPositionsInFormula
+                        .forEach(fromCellPosition -> formulaDependencyGraph.addEdge(fromCellPosition, cellPosition));
             } catch (ParserException e) {
                 errorMessage = e.getMessage();
+                if (text.trim().startsWith("=")) {
+                    setValueAt(errorMessage, cellPosition.row, cellPosition.column);
+                }
             }
-//            parse text and setUp formulaValue and cellType
-//            add edges to graph
+
+            try {
+                List<CellPosition> calculateOrder = formulaDependencyGraph.getCalculateOrder(cellPosition);
+                if (errorMessage != null) {
+                    calculateOrder = calculateOrder.subList(1, calculateOrder.size());
+                }
+                calculateOrder.forEach(cell -> tableCells[cell.row][cell.column - 1].recalculateFormulaValue());
+            } catch (FormulaCalculatorException e) {
+                errorMessage = e.getMessage();
+                setValueAt(errorMessage, cellPosition.row, cellPosition.column);
+            }
         }
 
         public void recalculateFormulaValue() {
             BiFunction<Integer, Integer, Double> tableValuesFunction = (row, column) -> tableCells[row][column - 1].getValue();
-            formulaValue = (Double) treeNode.calculate(tableValuesFunction);
+            try {
+                formulaValue = (Double) treeNode.calculate(tableValuesFunction);
+                setValueAt(formulaValue + "", cellPosition.row, cellPosition.column);
+            } catch (FunctionParameterException e) {
+                errorMessage = e.getMessage();
+                setValueAt(errorMessage, cellPosition.row, cellPosition.column);
+            }
         }
 
         public double getValue() {
@@ -121,6 +142,11 @@ public class ExcelTable extends JTable {
             if (o == null || getClass() != o.getClass()) return false;
             CellPosition that = (CellPosition) o;
             return row == that.row && column == that.column;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(row, column);
         }
     }
 

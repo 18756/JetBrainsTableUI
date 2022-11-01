@@ -1,4 +1,4 @@
-package jetbrains.parser;
+package jetbrains.exceptions;
 
 public class ParserException extends Exception {
     public ParserException(String errorMessage) {

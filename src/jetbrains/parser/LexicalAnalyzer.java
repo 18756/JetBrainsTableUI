@@ -1,5 +1,6 @@
 package jetbrains.parser;
 
+import jetbrains.exceptions.ParserException;
 import jetbrains.table.ExcelTable;
 import jetbrains.table.TableGenerator;
 
