@@ -11,11 +11,8 @@ import jetbrains.formulas.parser.nodes.TreeNode;
 import javax.swing.*;
 import javax.swing.event.CellEditorListener;
 import javax.swing.event.ChangeEvent;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseEvent;
+import javax.swing.table.TableCellEditor;
+import java.awt.event.*;
 import java.util.*;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -70,14 +67,16 @@ selectNextRow
 
 public class ExcelTable extends JTable {
     //    my TableModel
+    private JTextField textFieldToSynchronize;
+    private boolean isEditFromTextFieldSynchronize;
     private final CellElement[][] tableCells;
     private final FormulaDependencyGraph formulaDependencyGraph = new FormulaDependencyGraph();
 
     private CopyCellInfo copyCellInfo;
-
     private CellPosition lastEditCellPosition;
+    private CellPosition selectedCellPosition;
 
-    private Stack<UpdateAction> updateActionsToBackUp = new Stack<>();
+    private final Stack<UpdateAction> updateActionsToBackUp = new Stack<>();
 
     public ExcelTable(String[][] tableData, String[] columnHeader) {
         super(tableData, columnHeader);
@@ -127,18 +126,22 @@ public class ExcelTable extends JTable {
 
         getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, InputEvent.CTRL_DOWN_MASK), "undo");
 
-        getActionMap().put("startEditing", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (false) {
-                    UpdateAction updateAction = updateActionsToBackUp.pop();
-                    CellPosition cellPositionToBackUp = updateAction.cellPosition;
-                    tableCells[cellPositionToBackUp.row][cellPositionToBackUp.column - 1]
-                            .updateText(updateAction.oldText, false);
-                }
-                System.out.println("Start editing");
-            }
-        });
+//        addKeyListener(new KeyListener() {
+//            @Override
+//            public void keyTyped(KeyEvent e) {
+//                System.out.println("Tttyped");
+//                updateTextFieldToSynchronize(
+//                        (String) getValueAt(selectedCellPosition.row, selectedCellPosition.column) +
+//                                (e.getKeyChar() != '\b' ? e.getKeyChar() : "")
+//                );
+//            }
+//
+//            @Override
+//            public void keyPressed(KeyEvent e) {}
+//
+//            @Override
+//            public void keyReleased(KeyEvent e) {}
+//        });
     }
 
     @Override
@@ -148,13 +151,23 @@ public class ExcelTable extends JTable {
 
     @Override
     public boolean editCellAt(int row, int column, EventObject eventObject) {
-        System.out.println("POOR EDITING " + eventObject.toString());
-        if (isCellEditable(row, column) &&
-                ((eventObject instanceof MouseEvent && ((MouseEvent) eventObject).getClickCount() == 2) ||
-                        (eventObject instanceof KeyEvent && !((KeyEvent) eventObject).isActionKey()))) {
-            System.out.println("START EDITING " + row + " " + column);
-            setValueAt(tableCells[row][column - 1].text, row, column);
-            lastEditCellPosition = new CellPosition(row, column);
+        if (isCellEditable(row, column)) {
+            System.out.println("POOR EDITING " + eventObject.toString());
+            if (selectedCellPosition != null && isEditFromTextFieldSynchronize) {
+                isEditFromTextFieldSynchronize = false;
+                String text = (String) getValueAt(selectedCellPosition.row, selectedCellPosition.column);
+                tableCells[selectedCellPosition.row][selectedCellPosition.column - 1].updateText(text, true);
+            }
+            selectedCellPosition = tableCells[row][column - 1].cellPosition;
+            if ((eventObject instanceof MouseEvent && ((MouseEvent) eventObject).getClickCount() == 2) ||
+                    (eventObject instanceof KeyEvent && !((KeyEvent) eventObject).isActionKey())) {
+                System.out.println("START EDITING " + row + " " + column);
+                setValueAt(tableCells[row][column - 1].text, row, column);
+                updateTextFieldToSynchronize(tableCells[row][column - 1].text);
+                lastEditCellPosition = new CellPosition(row, column);
+            } else {
+                updateTextFieldToSynchronize(tableCells[row][column - 1].getTextToSyncTextField());
+            }
         }
         return super.editCellAt(row, column, eventObject);
     }
@@ -167,7 +180,10 @@ public class ExcelTable extends JTable {
         int column = lastEditCellPosition.column;
         String newText = (String) getValueAt(row, column);
         tableCells[row][column - 1].updateText(newText, true);
+        updateTextFieldToSynchronize(tableCells[row][column - 1].getTextToSyncTextField());
     }
+
+
 
     public String getTextAt(int row, int column) {
         return tableCells[row][column].text;
@@ -175,6 +191,50 @@ public class ExcelTable extends JTable {
 
     public void setTextAt(int row, int column, String text) {
         tableCells[row][column].updateText(text, false);
+    }
+
+    public Integer getRowBorderId(int x, int y) {
+        int offset = 7;
+        y += offset;
+        int eps = 2;
+        if (x > getColumn(getColumnName(0)).getWidth()) {
+            System.out.println("Out of first column");
+            return null;
+        }
+        int height = 0;
+        int rowBorderId = 0;
+        while (height < y - eps) {
+            height += getRowHeight(rowBorderId);
+            rowBorderId++;
+        }
+        if (y - eps <= height && height <= y + eps && rowBorderId != 0) {
+            return rowBorderId;
+        }
+        return null;
+    }
+
+    public void setTextFieldToSynchronize(JTextField textFieldToSynchronize) {
+        this.textFieldToSynchronize = textFieldToSynchronize;
+    }
+
+    private void updateTextFieldToSynchronize(String text) {
+        if (textFieldToSynchronize != null) {
+            textFieldToSynchronize.setText(text);
+        }
+    }
+
+    public void setTextToSelectedCell(String text) {
+        if (selectedCellPosition != null) {
+            isEditFromTextFieldSynchronize = true;
+            setValueAt(text, selectedCellPosition.row, selectedCellPosition.column);
+        }
+    }
+
+    public String getSelectedCellText() {
+        if (selectedCellPosition != null) {
+            return tableCells[selectedCellPosition.row][selectedCellPosition.column - 1].text;
+        }
+        return "";
     }
 
     private class CellElement {
@@ -205,11 +265,6 @@ public class ExcelTable extends JTable {
                         .forEach(fromCellPosition -> formulaDependencyGraph.addEdge(fromCellPosition, cellPosition));
             } catch (ParserException e) {
                 errorMessage = e.getMessage();
-                if (text.trim().startsWith("=")) {
-                    setValueAt(errorMessage, cellPosition.row, cellPosition.column);
-                } else {
-                    setValueAt(text, cellPosition.row, cellPosition.column);
-                }
             }
 
             try {
@@ -220,19 +275,19 @@ public class ExcelTable extends JTable {
                 calculateOrder.forEach(cell -> tableCells[cell.row][cell.column - 1].recalculateFormulaValue());
             } catch (FormulaCalculatorException e) {
                 errorMessage = e.getMessage();
-                setValueAt(errorMessage, cellPosition.row, cellPosition.column);
             }
+            setValueAt(getTextToCell(), cellPosition.row, cellPosition.column);
+            updateTextFieldToSynchronize(getTextToSyncTextField());
         }
 
         public void recalculateFormulaValue() {
             BiFunction<Integer, Integer, Double> tableValuesFunction = (row, column) -> tableCells[row][column - 1].getValue();
             try {
                 formulaValue = (Double) treeNode.calculate(tableValuesFunction);
-                setValueAt(formulaValue + "", cellPosition.row, cellPosition.column);
             } catch (FunctionParameterException | FormulaCalculatorException e) {
                 errorMessage = e.getMessage();
-                setValueAt(errorMessage, cellPosition.row, cellPosition.column);
             }
+            setValueAt(getTextToCell(), cellPosition.row, cellPosition.column);
         }
 
         public double getValue() {
@@ -241,6 +296,24 @@ public class ExcelTable extends JTable {
 
         public boolean isValidFormula() {
             return treeNode != null;
+        }
+
+        public boolean isInvalidFormula() {
+            return text.trim().startsWith("=") && errorMessage != null;
+        }
+
+        public String getTextToCell() {
+            if (formulaValue != null) {
+                return formulaValue + "";
+            }
+            return getTextToSyncTextField();
+        }
+
+        public String getTextToSyncTextField() {
+            if (isInvalidFormula()) {
+                return errorMessage;
+            }
+            return text;
         }
     }
 

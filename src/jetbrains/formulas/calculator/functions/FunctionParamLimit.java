@@ -20,7 +20,7 @@ enum FunctionParamLimit {
         @Override
         public int checkParams(List<Object> paramValues, int paramId) throws FunctionParameterException {
             checkNotEmptyParams(paramValues, paramId);
-            if (!(paramValues.get(paramId) instanceof Double[][])) {
+            if (!(paramValues.get(paramId) instanceof double[][])) {
                 throw new FunctionParameterException("Expected cell diapason param, but " +
                         paramValues.get(paramId).getClass().getName().toLowerCase() + " was found");
             }
