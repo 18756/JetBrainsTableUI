@@ -1,4 +1,4 @@
-package jetbrains.graph;
+package jetbrains.formulas.graph;
 
 import jetbrains.exceptions.FormulaCalculatorException;
 import jetbrains.table.ExcelTable;

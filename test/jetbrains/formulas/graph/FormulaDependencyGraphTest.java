@@ -1,6 +1,7 @@
-package jetbrains.graph;
+package jetbrains.formulas.graph;
 
 import jetbrains.exceptions.FormulaCalculatorException;
+import jetbrains.formulas.graph.FormulaDependencyGraph;
 import jetbrains.table.ExcelTable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -8,7 +9,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;

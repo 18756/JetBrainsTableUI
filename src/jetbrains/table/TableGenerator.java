@@ -6,12 +6,10 @@ import java.util.Arrays;
 public class TableGenerator {
     private static final char[] ALPHABET = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'};
 
-    public static JTable getExcelTable(int rows, int columns) {
+    public static ExcelTable getExcelTable(int rows, int columns) {
         String[] columnHeader = getColumnHeader(columns);
         String[][] tableData = getTableData(rows, columns);
-        JTable table = new ExcelTable(tableData, columnHeader);
-        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-        return table;
+        return new ExcelTable(tableData, columnHeader);
     }
 
     private static String[][] getTableData(int rows, int columns) {

@@ -1,6 +1,7 @@
-package jetbrains.parser;
+package jetbrains.formulas.parser;
 
 import jetbrains.exceptions.ParserException;
+import jetbrains.formulas.calculator.functions.FunctionRepository;
 import jetbrains.table.ExcelTable;
 import jetbrains.table.TableGenerator;
 
@@ -10,17 +11,19 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static jetbrains.formulas.parser.LexicalAnalyzer.TokenType.getCellPositionFromHeaderNames;
+
 public class LexicalAnalyzer {
     private static final String SKIP_SYMBOLS = "\\s*";
+
     public static List<Token> getTokensFromText(String text) throws ParserException {
-//        text = text.replaceAll(SKIP_SYMBOLS,"");
         text = text.trim();
         List<Token> tokens = new ArrayList<>();
         int curId = 0;
         boolean isProgress;
         while (curId < text.length()) {
             isProgress = false;
-            for (TokenType tokenType: TokenType.values()) {
+            for (TokenType tokenType : TokenType.values()) {
                 Pattern pattern = Pattern.compile(tokenType.regularExpression);
                 Matcher matcher = pattern.matcher(text);
                 if (matcher.find(curId) && matcher.start() == curId) {
@@ -36,6 +39,38 @@ public class LexicalAnalyzer {
             }
         }
         return tokens;
+    }
+
+    public static String getFormulaWithShiftedCells(String text, ExcelTable.CellPosition copyCell, ExcelTable.CellPosition pasteCell) {
+        StringBuilder copyText = new StringBuilder();
+        Pattern pattern = Pattern.compile(TokenType.CELL_POSITION.regularExpression);
+        Matcher matcher = pattern.matcher(text);
+        int curTextId = 0;
+        while (matcher.find()) {
+            copyText.append(text, curTextId, matcher.start());
+            String parsedText = matcher.group();
+
+            String columnNameToCopy = matcher.group(2);
+            String rowNameToCopy = matcher.group(4);
+            ExcelTable.CellPosition cellPositionToCopy = getCellPositionFromHeaderNames(rowNameToCopy, columnNameToCopy);
+            if (!Objects.equals(matcher.group(1), "$")) {
+                int columnDiff = pasteCell.column - copyCell.column;
+                cellPositionToCopy.column += columnDiff;
+                String columnNameToPaste = TableGenerator.getColumnNameById(cellPositionToCopy.column - 1);
+                parsedText = parsedText.replace(columnNameToCopy, columnNameToPaste);
+            }
+            if (!Objects.equals(matcher.group(3), "$")) {
+                int rowDiff = pasteCell.row - copyCell.row;
+                cellPositionToCopy.row += rowDiff;
+                String rowNameToPaste = (cellPositionToCopy.row + 1) + "";
+                parsedText = parsedText.replace(rowNameToCopy, rowNameToPaste);
+            }
+
+            copyText.append(parsedText);
+            curTextId = matcher.end();
+        }
+        copyText.append(text, curTextId, text.length());
+        return copyText.toString();
     }
 
     public static class Token {
@@ -71,7 +106,7 @@ public class LexicalAnalyzer {
                 return Double.parseDouble(matcher.group());
             }
         },
-        CELL_DIAPASON("([A-Z]+)(\\d+):([A-Z]+)(\\d+)") {
+        CELL_DIAPASON("\\$?([A-Z]+)\\$?(\\d+):\\$?([A-Z]+)\\$?(\\d+)") {
             @Override
             public Object getData(Matcher matcher) {
                 ExcelTable.CellPosition fromCellPosition = getCellPositionFromHeaderNames(matcher.group(2), matcher.group(1));
@@ -79,17 +114,18 @@ public class LexicalAnalyzer {
                 return new ExcelTable.CellDiapason(fromCellPosition, toCellPosition);
             }
         },
-        CELL_POSITION("([A-Z]+)(\\d+)") {
+        CELL_POSITION("(\\$?)([A-Z]+)(\\$?)(\\d+)") {
             @Override
             public Object getData(Matcher matcher) {
-                return getCellPositionFromHeaderNames(matcher.group(2), matcher.group(1));
+                return getCellPositionFromHeaderNames(matcher.group(4), matcher.group(2));
             }
         },
-        FUNCTION_NAME("[a-z][a-z0-9_]*") {
+        FUNCTION_NAME("([a-z][a-z0-9_]*)") {
             @Override
-            public Object getData(Matcher matcher) {
-//                check if function name exist
-                return matcher.group();
+            public Object getData(Matcher matcher) throws ParserException {
+                String functionName = matcher.group(1);
+                FunctionRepository.checkFunctionName(functionName);
+                return functionName;
             }
         };
 
@@ -99,15 +135,15 @@ public class LexicalAnalyzer {
             this.regularExpression = SKIP_SYMBOLS + regularExpression;
         }
 
-        public Object getData(Matcher matcher) {
+        public Object getData(Matcher matcher) throws ParserException {
             return null;
         }
 
-        public Token getToken(Matcher matcher) {
+        public Token getToken(Matcher matcher) throws ParserException {
             return new Token(this, getData(matcher));
         }
 
-        private static ExcelTable.CellPosition getCellPositionFromHeaderNames(String rowName, String columnName) {
+        public static ExcelTable.CellPosition getCellPositionFromHeaderNames(String rowName, String columnName) {
             int rowId = Integer.parseInt(rowName);
             int columnId = TableGenerator.getColumnIdByName(columnName);
             return new ExcelTable.CellPosition(rowId - 1, columnId + 1);

@@ -1,5 +1,7 @@
 package jetbrains.frames;
 
+import jetbrains.table.TableGenerator;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -44,6 +46,6 @@ public class TableSizeFrame extends JFrame {
         this.dispose();
         int rows = Integer.parseInt(rowsTextField.getText());
         int columns = Integer.parseInt(columnsTextField.getText());
-        new TableFrame(rows, columns);
+        new TableFrame(TableGenerator.getExcelTable(rows, columns));
     }
 }
