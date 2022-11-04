@@ -1,38 +1,31 @@
 package jetbrains.frames;
 
 import jetbrains.table.ExcelTable;
-import jetbrains.table.TableFileManager;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.List;
 
 import static jetbrains.frames.FileChooserFrames.showOpenTableFileChooser;
 
 public class MenuFrame extends JFrame {
-    private final JButton fileTableButton;
-    private final JButton newTableButton;
-
     public MenuFrame() {
 
         setTitle("Menu");
-        fileTableButton = new JButton("Open table from file");
-
+        JButton fileTableButton = new JButton("Open table from file");
+        fileTableButton.setPreferredSize(new Dimension(200, 50));
         fileTableButton.addActionListener(e -> showOpenTableFileChooser(this::goToTableFrame, this));
 
-        newTableButton = new JButton("New Table");
-
+        JButton newTableButton = new JButton("New Table");
+        newTableButton.setPreferredSize(new Dimension(200, 50));
         newTableButton.addActionListener(e -> goToTableSizeFrame());
 
-        Container c = getContentPane();
-        FlowLayout fl = new FlowLayout(FlowLayout.LEFT);
-        c.setLayout(fl);
+        JPanel mainPanel = new CenteredPanel(List.of(fileTableButton, Box.createVerticalStrut(20), newTableButton));
+        add(mainPanel);
 
-        c.add (fileTableButton);
-        c.add (newTableButton);
-
-        setSize(400, 300);
+        setSize(350, 250);
+        setLocationRelativeTo(null);
         setVisible(true);
-
     }
 
     private void goToTableSizeFrame() {

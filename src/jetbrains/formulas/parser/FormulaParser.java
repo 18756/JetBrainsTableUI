@@ -1,21 +1,16 @@
 package jetbrains.formulas.parser;
 
-import jetbrains.exceptions.FunctionParameterException;
 import jetbrains.exceptions.ParserException;
 import jetbrains.formulas.calculator.FormulaCalculator;
 import jetbrains.formulas.parser.LexicalAnalyzer.Token;
 import jetbrains.formulas.parser.nodes.TerminalNode;
 import jetbrains.formulas.parser.nodes.TreeNode;
-import jetbrains.table.ExcelTable;
 
 import java.util.*;
-import java.util.function.BiFunction;
 
 import static jetbrains.formulas.parser.LexicalAnalyzer.TokenType.*;
 
 public class FormulaParser {
-//    TODO: add $to cells to copy formulas
-//    TODO: separate this big file to small files
     public static TreeNode parse(String text) throws ParserException {
         List<Token> tokenList = LexicalAnalyzer.getTokensFromText(text);
         Collections.reverse(tokenList);
@@ -32,7 +27,6 @@ public class FormulaParser {
         if (tokenStack.empty()) {
             throw new ParserException("Empty formula.");
         }
-
         switch (tokenStack.peek().tokenType) {
             case NUMBER -> {
                 return new TerminalNode(tokenStack.pop(), FormulaCalculator.NUMBER);
@@ -50,9 +44,7 @@ public class FormulaParser {
                 tokenStack.pop();
                 return parseExp(tokenStack);
             }
-            case default -> {
-                throw new ParserException(getParserExceptionMessage(List.of("=", "number", "-"), tokenStack));
-            }
+            case default -> throw new ParserException(getParserExceptionMessage(List.of("=", "number", "-"), tokenStack));
         }
     }
 
@@ -167,7 +159,7 @@ public class FormulaParser {
 
     private static String getParserExceptionMessage(List<String> expectedTokens, Stack<Token> tokenStack) {
         return "Expected " + String.join(", ", expectedTokens) +
-                "tokens, but " +
+                " tokens, but " +
                 (tokenStack.isEmpty() ? "end of formula" : tokenStack.peek().tokenType.name().toLowerCase()) +
                 " was found.";
     }

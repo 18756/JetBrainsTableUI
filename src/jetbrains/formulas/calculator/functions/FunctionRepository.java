@@ -3,7 +3,10 @@ package jetbrains.formulas.calculator.functions;
 import jetbrains.exceptions.FunctionParameterException;
 import jetbrains.exceptions.ParserException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
@@ -12,43 +15,95 @@ public class FunctionRepository {
 
     static {
         FUNCTION_NAME_TO_FUNCTION_WITH_PARAM_LIMITS.put(
-                "sin", new FunctionWithParameterLimits(FunctionRepository::sin, List.of(FunctionParamLimit.ONLY_DOUBLE, FunctionParamLimit.END_PARAMS))
+                "sin",
+                new FunctionWithParameterLimits(
+                        FunctionRepository::sin,
+                        List.of(FunctionParamLimit.ONLY_DOUBLE, FunctionParamLimit.END_PARAMS)
+                )
         );
         FUNCTION_NAME_TO_FUNCTION_WITH_PARAM_LIMITS.put(
-                "cos", new FunctionWithParameterLimits(FunctionRepository::cos, List.of(FunctionParamLimit.ONLY_DOUBLE, FunctionParamLimit.END_PARAMS))
+                "cos",
+                new FunctionWithParameterLimits(
+                        FunctionRepository::cos,
+                        List.of(FunctionParamLimit.ONLY_DOUBLE, FunctionParamLimit.END_PARAMS)
+                )
         );
         FUNCTION_NAME_TO_FUNCTION_WITH_PARAM_LIMITS.put(
-                "tan", new FunctionWithParameterLimits(FunctionRepository::tan, List.of(FunctionParamLimit.ONLY_DOUBLE, FunctionParamLimit.END_PARAMS))
+                "tan",
+                new FunctionWithParameterLimits(
+                        FunctionRepository::tan,
+                        List.of(FunctionParamLimit.ONLY_DOUBLE, FunctionParamLimit.END_PARAMS)
+                )
         );
         FUNCTION_NAME_TO_FUNCTION_WITH_PARAM_LIMITS.put(
-                "ln", new FunctionWithParameterLimits(FunctionRepository::ln, List.of(FunctionParamLimit.ONLY_DOUBLE, FunctionParamLimit.END_PARAMS))
+                "ln",
+                new FunctionWithParameterLimits(
+                        FunctionRepository::ln,
+                        List.of(FunctionParamLimit.ONLY_DOUBLE, FunctionParamLimit.END_PARAMS)
+                )
         );
         FUNCTION_NAME_TO_FUNCTION_WITH_PARAM_LIMITS.put(
-                "exp", new FunctionWithParameterLimits(FunctionRepository::exp, List.of(FunctionParamLimit.ONLY_DOUBLE, FunctionParamLimit.END_PARAMS))
+                "exp",
+                new FunctionWithParameterLimits(
+                        FunctionRepository::exp,
+                        List.of(FunctionParamLimit.ONLY_DOUBLE, FunctionParamLimit.END_PARAMS)
+                )
         );
         FUNCTION_NAME_TO_FUNCTION_WITH_PARAM_LIMITS.put(
-                "abs", new FunctionWithParameterLimits(FunctionRepository::abs, List.of(FunctionParamLimit.ONLY_DOUBLE, FunctionParamLimit.END_PARAMS))
+                "abs",
+                new FunctionWithParameterLimits(
+                        FunctionRepository::abs,
+                        List.of(FunctionParamLimit.ONLY_DOUBLE, FunctionParamLimit.END_PARAMS)
+                )
         );
         FUNCTION_NAME_TO_FUNCTION_WITH_PARAM_LIMITS.put(
-                "pow", new FunctionWithParameterLimits(FunctionRepository::pow, List.of(FunctionParamLimit.ONLY_DOUBLE, FunctionParamLimit.ONLY_DOUBLE, FunctionParamLimit.END_PARAMS))
+                "pow",
+                new FunctionWithParameterLimits(
+                        FunctionRepository::pow,
+                        List.of(FunctionParamLimit.ONLY_DOUBLE, FunctionParamLimit.ONLY_DOUBLE, FunctionParamLimit.END_PARAMS)
+                )
         );
         FUNCTION_NAME_TO_FUNCTION_WITH_PARAM_LIMITS.put(
-                "min", new FunctionWithParameterLimits(FunctionRepository::min, List.of(FunctionParamLimit.ANY))
+                "min",
+                new FunctionWithParameterLimits(
+                        FunctionRepository::min,
+                        List.of(FunctionParamLimit.ANY)
+                )
         );
         FUNCTION_NAME_TO_FUNCTION_WITH_PARAM_LIMITS.put(
-                "max", new FunctionWithParameterLimits(FunctionRepository::max, List.of(FunctionParamLimit.ANY))
+                "max",
+                new FunctionWithParameterLimits(
+                        FunctionRepository::max,
+                        List.of(FunctionParamLimit.ANY)
+                )
         );
         FUNCTION_NAME_TO_FUNCTION_WITH_PARAM_LIMITS.put(
-                "sum", new FunctionWithParameterLimits(FunctionRepository::sum, List.of(FunctionParamLimit.ANY))
+                "sum",
+                new FunctionWithParameterLimits(
+                        FunctionRepository::sum,
+                        List.of(FunctionParamLimit.ANY)
+                )
         );
         FUNCTION_NAME_TO_FUNCTION_WITH_PARAM_LIMITS.put(
-                "mean", new FunctionWithParameterLimits(FunctionRepository::mean, List.of(FunctionParamLimit.ANY))
+                "mean",
+                new FunctionWithParameterLimits(
+                        FunctionRepository::mean,
+                        List.of(FunctionParamLimit.ANY)
+                )
         );
         FUNCTION_NAME_TO_FUNCTION_WITH_PARAM_LIMITS.put(
-                "std", new FunctionWithParameterLimits(FunctionRepository::std, List.of(FunctionParamLimit.ANY))
+                "std",
+                new FunctionWithParameterLimits(
+                        FunctionRepository::std,
+                        List.of(FunctionParamLimit.ANY)
+                )
         );
         FUNCTION_NAME_TO_FUNCTION_WITH_PARAM_LIMITS.put(
-                "cor", new FunctionWithParameterLimits(FunctionRepository::cor, List.of(FunctionParamLimit.ONLY_CELL_DIAPASON, FunctionParamLimit.ONLY_CELL_DIAPASON, FunctionParamLimit.END_PARAMS))
+                "cor",
+                new FunctionWithParameterLimits(
+                        FunctionRepository::cor,
+                        List.of(FunctionParamLimit.ONLY_CELL_DIAPASON, FunctionParamLimit.ONLY_CELL_DIAPASON, FunctionParamLimit.END_PARAMS)
+                )
         );
     }
 
@@ -92,11 +147,11 @@ public class FunctionRepository {
     }
 
     private static double min(List<Object> params) {
-        return getDoubleValuesFromParams(params).stream().min(Double::compareTo).get();
+        return getDoubleValuesFromParams(params).stream().min(Double::compareTo).orElse(Double.MAX_VALUE);
     }
 
     private static double max(List<Object> params) {
-        return getDoubleValuesFromParams(params).stream().max(Double::compareTo).get();
+        return getDoubleValuesFromParams(params).stream().max(Double::compareTo).orElse(-Double.MAX_VALUE);
     }
 
     private static double sum(List<Object> params) {
@@ -109,8 +164,9 @@ public class FunctionRepository {
 
     private static double std(List<Object> params) {
         double mean = mean(params);
-        double stdSum = getDoubleValuesFromParams(params).stream().reduce(0.0, (a, b) -> (a + (b - mean) * (b - mean)));
-        return Math.sqrt(stdSum / getDoubleValuesFromParams(params).size());
+        List<Double> xs = getDoubleValuesFromParams(params);
+        double stdSum = xs.stream().reduce(0.0, (a, b) -> (a + (b - mean) * (b - mean)));
+        return Math.sqrt(stdSum / xs.size());
     }
 
     private static double cor(List<Object> params) {
@@ -136,9 +192,9 @@ public class FunctionRepository {
                 doubleValues.add((Double) param);
             } else {
                 double[][] matrix = (double[][]) param;
-                for (int i = 0; i < matrix.length; i++) {
-                    for (int j = 0; j < matrix[i].length; j++) {
-                        doubleValues.add(matrix[i][j]);
+                for (double[] doubles : matrix) {
+                    for (double value : doubles) {
+                        doubleValues.add(value);
                     }
                 }
             }
@@ -147,8 +203,6 @@ public class FunctionRepository {
 
     }
 
-
-    //            TODO: add more matrix functions
     public static class FunctionWithParameterLimits {
         public Function<List<Object>, Double> function;
         List<FunctionParamLimit> functionParamLimits;

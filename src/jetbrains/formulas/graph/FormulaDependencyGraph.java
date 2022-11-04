@@ -1,22 +1,22 @@
 package jetbrains.formulas.graph;
 
 import jetbrains.exceptions.FormulaCalculatorException;
-import jetbrains.table.ExcelTable;
+import jetbrains.table.structures.CellPosition;
 
 import java.util.*;
 
 public class FormulaDependencyGraph {
     private int dfsRuns = 0;
-    private final Map<ExcelTable.CellPosition, Vertex> cellPositionToVertex = new HashMap<>();
+    private final Map<CellPosition, Vertex> cellPositionToVertex = new HashMap<>();
 
-    public void addEdge(ExcelTable.CellPosition fromCellPosition, ExcelTable.CellPosition toCellPosition) {
+    public void addEdge(CellPosition fromCellPosition, CellPosition toCellPosition) {
         Vertex fromVertex = getVertex(fromCellPosition);
         Vertex toVertex = getVertex(toCellPosition);
         fromVertex.outgoingEdges.add(toVertex);
         toVertex.incomingEdges.add(fromVertex);
     }
 
-    public void removeIncomingEdges(ExcelTable.CellPosition cellPosition) {
+    public void removeIncomingEdges(CellPosition cellPosition) {
         Vertex vertex = getVertex(cellPosition);
         for (Vertex fromVertex : vertex.incomingEdges) {
             fromVertex.outgoingEdges.remove(vertex);
@@ -26,9 +26,9 @@ public class FormulaDependencyGraph {
         tryRemoveVertex(vertex);
     }
 
-    public List<ExcelTable.CellPosition> getCalculateOrder(ExcelTable.CellPosition startCellPosition) throws FormulaCalculatorException {
+    public List<CellPosition> getCalculateOrder(CellPosition startCellPosition) throws FormulaCalculatorException {
         Vertex startVertex = getVertex(startCellPosition);
-        List<ExcelTable.CellPosition> calculateOrder = new ArrayList<>();
+        List<CellPosition> calculateOrder = new ArrayList<>();
         dfsRuns++;
         dfs(startVertex, calculateOrder);
         tryRemoveVertex(startVertex);
@@ -36,7 +36,7 @@ public class FormulaDependencyGraph {
         return calculateOrder;
     }
 
-    private void dfs(Vertex vertex, List<ExcelTable.CellPosition> calculateOrder) throws FormulaCalculatorException {
+    private void dfs(Vertex vertex, List<CellPosition> calculateOrder) throws FormulaCalculatorException {
         vertex.dfsColor = getGrayColorId();
         for (Vertex toVertex : vertex.outgoingEdges) {
             if (toVertex.dfsColor == getGrayColorId()) {
@@ -49,7 +49,7 @@ public class FormulaDependencyGraph {
         calculateOrder.add(vertex.cellPosition);
     }
 
-    private Vertex getVertex(ExcelTable.CellPosition cellPosition) {
+    private Vertex getVertex(CellPosition cellPosition) {
         if (!cellPositionToVertex.containsKey(cellPosition)) {
             cellPositionToVertex.put(cellPosition, new Vertex(cellPosition));
         }
@@ -72,11 +72,11 @@ public class FormulaDependencyGraph {
 
     private static class Vertex {
         int dfsColor = 0;
-        ExcelTable.CellPosition cellPosition;
+        CellPosition cellPosition;
         Set<Vertex> outgoingEdges = new HashSet<>();
         Set<Vertex> incomingEdges = new HashSet<>();
 
-        public Vertex(ExcelTable.CellPosition cellPosition) {
+        public Vertex(CellPosition cellPosition) {
             this.cellPosition = cellPosition;
         }
 

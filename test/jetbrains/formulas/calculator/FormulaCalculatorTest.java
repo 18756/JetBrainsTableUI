@@ -15,7 +15,6 @@ import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import static jetbrains.formulas.parser.FormulaParser.parse;
-import static org.junit.jupiter.api.Assertions.*;
 
 class FormulaCalculatorTest {
     private static Stream<Arguments> calculateFormulaSource() {
@@ -66,7 +65,7 @@ class FormulaCalculatorTest {
 
     @ParameterizedTest
     @MethodSource("functionParameterExceptionSource")
-    public void functionParameterExceptionTest(String text) throws ParserException, FunctionParameterException {
+    public void functionParameterExceptionTest(String text) throws ParserException {
         final BiFunction<Integer, Integer, Double> tableValuesFunction = getTableValuesFunction(Map.of());
         TreeNode tree = parse(text);
         Assertions.assertThrows(FunctionParameterException.class, () -> tree.calculate(tableValuesFunction));

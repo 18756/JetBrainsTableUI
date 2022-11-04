@@ -1,8 +1,7 @@
 package jetbrains.formulas.graph;
 
 import jetbrains.exceptions.FormulaCalculatorException;
-import jetbrains.formulas.graph.FormulaDependencyGraph;
-import jetbrains.table.ExcelTable;
+import jetbrains.table.structures.CellPosition;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -12,8 +11,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-
-import jetbrains.table.ExcelTable.*;
 
 class FormulaDependencyGraphTest {
     private final static CellPosition CELL1 = new CellPosition(0, 0);
@@ -181,12 +178,12 @@ class FormulaDependencyGraphTest {
         Assertions.assertThrows(FormulaCalculatorException.class, () -> formulaDependencyGraph.getCalculateOrder(startCellPosition));
     }
 
-    private static Consumer<FormulaDependencyGraph> addEdgeConsumer(ExcelTable.CellPosition fromCellPosition,
-                                                                    ExcelTable.CellPosition toCellPosition) {
+    private static Consumer<FormulaDependencyGraph> addEdgeConsumer(CellPosition fromCellPosition,
+                                                                    CellPosition toCellPosition) {
         return formulaDependencyGraph -> formulaDependencyGraph.addEdge(fromCellPosition, toCellPosition);
     }
 
-    private static Consumer<FormulaDependencyGraph> removeIncomingEdgesConsumer(ExcelTable.CellPosition cellPosition) {
+    private static Consumer<FormulaDependencyGraph> removeIncomingEdgesConsumer(CellPosition cellPosition) {
         return formulaDependencyGraph -> formulaDependencyGraph.removeIncomingEdges(cellPosition);
     }
 }

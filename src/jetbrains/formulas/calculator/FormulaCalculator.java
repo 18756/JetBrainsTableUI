@@ -5,8 +5,9 @@ import jetbrains.exceptions.FunctionParameterException;
 import jetbrains.formulas.calculator.functions.FunctionRepository;
 import jetbrains.formulas.parser.nodes.TerminalNode;
 import jetbrains.formulas.parser.nodes.TreeNode;
-import jetbrains.table.ExcelTable;
 import jetbrains.table.TableGenerator;
+import jetbrains.table.structures.CellDiapason;
+import jetbrains.table.structures.CellPosition;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -79,14 +80,14 @@ public enum FormulaCalculator {
     CELL {
         @Override
         public Object calculate(TreeNode treeNode, BiFunction<Integer, Integer, Double> tableValuesFunction) throws FormulaCalculatorException {
-            ExcelTable.CellPosition cellPosition = (ExcelTable.CellPosition) ((TerminalNode) treeNode).token.data;
+            CellPosition cellPosition = (CellPosition) ((TerminalNode) treeNode).token.data;
             return getCellValue(cellPosition.row, cellPosition.column, tableValuesFunction);
         }
     },
     CELL_DIAPASON {
         @Override
         public Object calculate(TreeNode treeNode, BiFunction<Integer, Integer, Double> tableValuesFunction) throws FormulaCalculatorException {
-            ExcelTable.CellDiapason cellDiapason = (ExcelTable.CellDiapason) ((TerminalNode) treeNode).token.data;
+            CellDiapason cellDiapason = (CellDiapason) ((TerminalNode) treeNode).token.data;
             int rows = cellDiapason.toCellPosition.row - cellDiapason.fromCellPosition.row + 1;
             int columns = cellDiapason.toCellPosition.column - cellDiapason.fromCellPosition.column + 1;
             int minRow = cellDiapason.fromCellPosition.row;

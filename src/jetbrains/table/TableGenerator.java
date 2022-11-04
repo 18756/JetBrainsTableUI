@@ -1,6 +1,5 @@
 package jetbrains.table;
 
-import javax.swing.*;
 import java.util.Arrays;
 
 public class TableGenerator {
@@ -24,7 +23,6 @@ public class TableGenerator {
     private static String[] getColumnHeader(int columns) {
         String[] columnHeader = new String[columns + 1];
         columnHeader[0] = "";
-        StringBuilder columnName;
         for (int i = 0; i < columns; i++) {
             columnHeader[i + 1] = getColumnNameById(i);
         }

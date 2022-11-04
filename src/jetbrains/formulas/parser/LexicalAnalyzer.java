@@ -2,8 +2,9 @@ package jetbrains.formulas.parser;
 
 import jetbrains.exceptions.ParserException;
 import jetbrains.formulas.calculator.functions.FunctionRepository;
-import jetbrains.table.ExcelTable;
 import jetbrains.table.TableGenerator;
+import jetbrains.table.structures.CellDiapason;
+import jetbrains.table.structures.CellPosition;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +42,7 @@ public class LexicalAnalyzer {
         return tokens;
     }
 
-    public static String getFormulaWithShiftedCells(String text, ExcelTable.CellPosition copyCell, ExcelTable.CellPosition pasteCell) {
+    public static String getFormulaWithShiftedCells(String text, CellPosition copyCell, CellPosition pasteCell) {
         StringBuilder copyText = new StringBuilder();
         Pattern pattern = Pattern.compile(TokenType.CELL_POSITION.regularExpression);
         Matcher matcher = pattern.matcher(text);
@@ -52,7 +53,7 @@ public class LexicalAnalyzer {
 
             String columnNameToCopy = matcher.group(2);
             String rowNameToCopy = matcher.group(4);
-            ExcelTable.CellPosition cellPositionToCopy = getCellPositionFromHeaderNames(rowNameToCopy, columnNameToCopy);
+            CellPosition cellPositionToCopy = getCellPositionFromHeaderNames(rowNameToCopy, columnNameToCopy);
             if (!Objects.equals(matcher.group(1), "$")) {
                 int columnDiff = pasteCell.column - copyCell.column;
                 cellPositionToCopy.column += columnDiff;
@@ -109,9 +110,9 @@ public class LexicalAnalyzer {
         CELL_DIAPASON("\\$?([A-Z]+)\\$?(\\d+):\\$?([A-Z]+)\\$?(\\d+)") {
             @Override
             public Object getData(Matcher matcher) {
-                ExcelTable.CellPosition fromCellPosition = getCellPositionFromHeaderNames(matcher.group(2), matcher.group(1));
-                ExcelTable.CellPosition toCellPosition = getCellPositionFromHeaderNames(matcher.group(4), matcher.group(3));
-                return new ExcelTable.CellDiapason(fromCellPosition, toCellPosition);
+                CellPosition fromCellPosition = getCellPositionFromHeaderNames(matcher.group(2), matcher.group(1));
+                CellPosition toCellPosition = getCellPositionFromHeaderNames(matcher.group(4), matcher.group(3));
+                return new CellDiapason(fromCellPosition, toCellPosition);
             }
         },
         CELL_POSITION("(\\$?)([A-Z]+)(\\$?)(\\d+)") {
@@ -143,10 +144,10 @@ public class LexicalAnalyzer {
             return new Token(this, getData(matcher));
         }
 
-        public static ExcelTable.CellPosition getCellPositionFromHeaderNames(String rowName, String columnName) {
+        public static CellPosition getCellPositionFromHeaderNames(String rowName, String columnName) {
             int rowId = Integer.parseInt(rowName);
             int columnId = TableGenerator.getColumnIdByName(columnName);
-            return new ExcelTable.CellPosition(rowId - 1, columnId + 1);
+            return new CellPosition(rowId - 1, columnId + 1);
         }
     }
 }

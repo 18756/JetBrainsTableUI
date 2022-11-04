@@ -5,6 +5,7 @@ import jetbrains.exceptions.TableFileManagerException;
 import java.io.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class TableFileManager {
     private static final String INVALID_FILE_MESSAGE = "Invalid table file.";
@@ -29,7 +30,7 @@ public class TableFileManager {
 
     public static ExcelTable getTableFromFile(File file) throws TableFileManagerException {
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            String tableText = reader.readLine();
+            String tableText = reader.lines().collect(Collectors.joining("\n"));
             Pattern tableSizePattern = Pattern.compile("(\\d+),(\\d+);");
             Matcher tableSizeMatcher = tableSizePattern.matcher(tableText);
             int curTextId = 0;

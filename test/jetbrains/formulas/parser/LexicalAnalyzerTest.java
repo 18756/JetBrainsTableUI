@@ -1,11 +1,10 @@
 package jetbrains.formulas.parser;
 
 import jetbrains.exceptions.ParserException;
-import jetbrains.formulas.parser.LexicalAnalyzer;
 import jetbrains.formulas.parser.LexicalAnalyzer.Token;
 import jetbrains.formulas.parser.LexicalAnalyzer.TokenType;
-import jetbrains.table.ExcelTable.CellDiapason;
-import jetbrains.table.ExcelTable.CellPosition;
+import jetbrains.table.structures.CellDiapason;
+import jetbrains.table.structures.CellPosition;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -126,7 +125,7 @@ class LexicalAnalyzerTest {
 
     @ParameterizedTest
     @MethodSource("invalidTokensSource")
-    public void getTokensFromInvalidTextTest(String text) throws ParserException {
+    public void getTokensFromInvalidTextTest(String text) {
         Assertions.assertThrows(ParserException.class, () -> LexicalAnalyzer.getTokensFromText(text));
     }
 

@@ -3,6 +3,8 @@ package jetbrains.formulas.parser;
 import jetbrains.exceptions.ParserException;
 import jetbrains.formulas.parser.nodes.TerminalNode;
 import jetbrains.formulas.parser.nodes.TreeNode;
+import jetbrains.table.structures.CellDiapason;
+import jetbrains.table.structures.CellPosition;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -14,8 +16,6 @@ import java.util.stream.Stream;
 import static jetbrains.formulas.parser.FormulaParser.parse;
 import static jetbrains.formulas.parser.LexicalAnalyzer.Token;
 import static jetbrains.formulas.parser.LexicalAnalyzer.TokenType.*;
-import static jetbrains.table.ExcelTable.CellDiapason;
-import static jetbrains.table.ExcelTable.CellPosition;
 
 class FormulaParserTest {
     private static Stream<Arguments> validFormulaTreesSource() {
@@ -122,7 +122,7 @@ class FormulaParserTest {
 
     @ParameterizedTest
     @MethodSource("invalidFormulasSource")
-    public void parseInvalidFormulaTest(String text) throws ParserException {
+    public void parseInvalidFormulaTest(String text) {
         Assertions.assertThrows(ParserException.class, () -> parse(text));
     }
 }

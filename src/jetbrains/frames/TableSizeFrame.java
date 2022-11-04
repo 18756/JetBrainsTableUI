@@ -1,51 +1,61 @@
 package jetbrains.frames;
 
+import jetbrains.exceptions.UserInputException;
 import jetbrains.table.TableGenerator;
 
 import javax.swing.*;
+import javax.swing.border.LineBorder;
 import java.awt.*;
+import java.util.List;
 
 public class TableSizeFrame extends JFrame {
-    private final JLabel sizeLabel;
-    private final JLabel xLabel;
     private final JTextField rowsTextField;
     private final JTextField columnsTextField;
-    private final JButton createTableButton;
 
     public TableSizeFrame() {
 
-        setTitle("Menu");
+        setTitle("Choose table size");
 
-        sizeLabel = new JLabel("Table size:");
+        JLabel sizeLabel = new JLabel("Table size:");
         rowsTextField = new JTextField(5);
-        xLabel = new JLabel("x");
+        JLabel xLabel = new JLabel("x");
         columnsTextField = new JTextField(5);
 
+        JPanel sizePanel = new JPanel();
+        sizePanel.add(sizeLabel);
+        sizePanel.add(rowsTextField);
+        sizePanel.add(xLabel);
+        sizePanel.add(columnsTextField);
 
-        createTableButton = new JButton("Create table");
+        sizePanel.setBorder(new LineBorder(Color.BLACK));
+
+        JButton createTableButton = new JButton("Create table");
         createTableButton.addActionListener(e -> goToTableFrame());
 
-
-
-        Container c = getContentPane();
-        FlowLayout fl = new FlowLayout(FlowLayout.LEFT);
-        c.setLayout(fl);
-
-        c.add(sizeLabel);
-        c.add(rowsTextField);
-        c.add(xLabel);
-        c.add(columnsTextField);
-        c.add(createTableButton);
+        JPanel mainPanel = new CenteredPanel(List.of(sizePanel, Box.createVerticalStrut(10), createTableButton));
+        add(mainPanel);
 
         setSize(400, 300);
+        setLocationRelativeTo(null);
         setVisible(true);
-
     }
 
     private void goToTableFrame() {
-        this.dispose();
-        int rows = Integer.parseInt(rowsTextField.getText());
-        int columns = Integer.parseInt(columnsTextField.getText());
-        new TableFrame(TableGenerator.getExcelTable(rows, columns));
+        try {
+            int rows = Integer.parseInt(rowsTextField.getText());
+            int columns = Integer.parseInt(columnsTextField.getText());
+            if (rows <= 0 || columns <= 0) {
+                throw new UserInputException("Rows and columns can't be less than or equal to zero.");
+            }
+            this.dispose();
+            new TableFrame(TableGenerator.getExcelTable(rows, columns));
+        } catch (NumberFormatException | UserInputException e) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    e.getMessage(),
+                    "Table size error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
     }
 }

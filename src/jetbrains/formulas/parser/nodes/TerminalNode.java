@@ -2,7 +2,8 @@ package jetbrains.formulas.parser.nodes;
 
 import jetbrains.formulas.calculator.FormulaCalculator;
 import jetbrains.formulas.parser.LexicalAnalyzer;
-import jetbrains.table.ExcelTable;
+import jetbrains.table.structures.CellDiapason;
+import jetbrains.table.structures.CellPosition;
 
 import java.util.List;
 import java.util.Objects;
@@ -23,16 +24,16 @@ public class TerminalNode extends TreeNode {
         this.token = token;
     }
 
-    public void addAllCellPositions(Set<ExcelTable.CellPosition> cellPositions) {
+    public void addAllCellPositions(Set<CellPosition> cellPositions) {
         if (token.tokenType == CELL_POSITION) {
-            cellPositions.add((ExcelTable.CellPosition) token.data);
+            cellPositions.add((CellPosition) token.data);
         } else if (token.tokenType == CELL_DIAPASON) {
-            ExcelTable.CellDiapason cellDiapason = (ExcelTable.CellDiapason) token.data;
-            ExcelTable.CellPosition fromCellPosition = cellDiapason.fromCellPosition;
-            ExcelTable.CellPosition toCellPosition = cellDiapason.toCellPosition;
+            CellDiapason cellDiapason = (CellDiapason) token.data;
+            CellPosition fromCellPosition = cellDiapason.fromCellPosition;
+            CellPosition toCellPosition = cellDiapason.toCellPosition;
             for (int row = fromCellPosition.row; row <= toCellPosition.row; row++) {
                 for (int column = fromCellPosition.column; column <= toCellPosition.column; column++) {
-                    cellPositions.add(new ExcelTable.CellPosition(row, column));
+                    cellPositions.add(new CellPosition(row, column));
                 }
             }
         }

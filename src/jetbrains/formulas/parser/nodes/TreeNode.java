@@ -3,7 +3,7 @@ package jetbrains.formulas.parser.nodes;
 import jetbrains.exceptions.FormulaCalculatorException;
 import jetbrains.exceptions.FunctionParameterException;
 import jetbrains.formulas.calculator.FormulaCalculator;
-import jetbrains.table.ExcelTable;
+import jetbrains.table.structures.CellPosition;
 
 import java.util.List;
 import java.util.Objects;
@@ -27,7 +27,7 @@ public class TreeNode {
         return formulaCalculator.calculate(this, tableValuesFunction);
     }
 
-    public void addAllCellPositions(Set<ExcelTable.CellPosition> cellPositions) {
+    public void addAllCellPositions(Set<CellPosition> cellPositions) {
         for (TreeNode child : children) {
             child.addAllCellPositions(cellPositions);
         }
