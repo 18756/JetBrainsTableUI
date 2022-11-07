@@ -13,7 +13,6 @@ public class TableSizeFrame extends JFrame {
     private final JTextField columnsTextField;
 
     public TableSizeFrame() {
-
         setTitle("Choose table size");
 
         JLabel sizeLabel = new JLabel("Table size:");
@@ -32,10 +31,14 @@ public class TableSizeFrame extends JFrame {
         JButton createTableButton = new JButton("Create table");
         createTableButton.addActionListener(e -> goToTableFrame());
 
-        JPanel mainPanel = new CenteredPanel(List.of(sizePanel, Box.createVerticalStrut(10), createTableButton));
-        add(mainPanel);
+        JPanel mainPanel = new CenteredPanel(List.of(
+                new CenteredPanel.ResizableComponent(sizePanel, 1.0, 0.5),
+                new CenteredPanel.ResizableComponent(Box.createVerticalStrut(10), 1.0, 0.3),
+                new CenteredPanel.ResizableComponent(createTableButton, 1.0, 0.6)
+        ), 0.7, 1.0);
 
-        setSize(400, 300);
+        setContentPane(mainPanel);
+        setMinimumSize(new Dimension(450, 350));
         setLocationRelativeTo(null);
         setVisible(true);
     }

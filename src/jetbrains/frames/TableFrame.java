@@ -3,7 +3,6 @@ package jetbrains.frames;
 import jetbrains.table.ExcelTable;
 
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.awt.event.*;
@@ -19,7 +18,6 @@ public class TableFrame extends JFrame {
     private final int minHeight = 10;
 
     public TableFrame(ExcelTable table) {
-
         setTitle("Table");
         setUpMenuBar(table);
         setUpRowHeightResize(table);
@@ -32,49 +30,19 @@ public class TableFrame extends JFrame {
         table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
         JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setBorder(new EmptyBorder(10, 10, 10, 10));
-        scrollPane.setBorder(new LineBorder(Color.BLACK));
 
-        JPanel mainPanel = new CenteredPanel(List.of(syncTextField, Box.createVerticalStrut(10), scrollPane));
-        mainPanel.setPreferredSize(new Dimension(500, 500));
+        JPanel mainPanel = new CenteredPanel(List.of(
+                new CenteredPanel.ResizableComponent(syncTextField, 1.0, 0.0),
+                new CenteredPanel.ResizableComponent(Box.createVerticalStrut(10), 0.0, 0.0),
+                new CenteredPanel.ResizableComponent(scrollPane, 1.0, 1.0)
+        ), 0.04, 0.0);
         mainPanel.setBorder(new LineBorder(Color.BLACK));
 
-        resizeComponents(syncTextField, scrollPane, mainPanel);
-
-        add(mainPanel);
-
-        addComponentListener(new ComponentListener() {
-            @Override
-            public void componentResized(ComponentEvent e) {
-                resizeComponents(syncTextField, scrollPane, mainPanel);
-                System.out.println(getWidth() + " x " + getHeight());
-            }
-
-            @Override
-            public void componentMoved(ComponentEvent e) {}
-
-            @Override
-            public void componentShown(ComponentEvent e) {}
-
-            @Override
-            public void componentHidden(ComponentEvent e) {}
-        });
-
+        setLayout(new BorderLayout());
+        setContentPane(mainPanel);
         setMinimumSize(new Dimension(600, 500));
-        setSize(600, 500);
         setLocationRelativeTo(null);
         setVisible(true);
-    }
-
-    private void resizeComponents(JTextField topTextField, JScrollPane scrollPane, JPanel mainPanel) {
-        topTextField.setPreferredSize(new Dimension(
-                (int) (mainPanel.getWidth() * 0.9),
-                30
-        ));
-        scrollPane.setPreferredSize(new Dimension(
-                (int) (mainPanel.getWidth() * 0.9),
-                (int) Math.min(mainPanel.getHeight() - 80, mainPanel.getHeight() * 0.9))
-        );
     }
 
     private JTextField setUpSyncTextField(ExcelTable table) {
